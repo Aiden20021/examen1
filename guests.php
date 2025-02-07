@@ -50,8 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     exit;
 }
 
-// Bewerk een gast (alleen Admin)
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'update' && $userRole === 'admin') {
+// Bewerk een gast
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'update') {
     $guest_id = $_POST['guest_id'];
     $company_name = $_POST['company_name'];
     $contact_person = $_POST['contact_person'];
@@ -74,12 +74,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Samenkomst - Gasten</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script>
+        // Toggle bewerk formulier binnen dezelfde rij
+        function editGuest(id) {
+            var row = document.getElementById('row_' + id);
+            var form = document.getElementById('form_' + id);
+            row.style.display = 'none';
+            form.style.display = 'block';
+        }
+    </script>
 </head>
 <body>
     <header>
@@ -132,23 +141,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </thead>
                 <tbody>
                     <?php foreach ($guests as $guest): ?>
-                        <tr>
+                        <!-- Rijen voor elke gast -->
+                        <tr id="row_<?= $guest['id'] ?>">
                             <td><?= htmlspecialchars($guest['company_name']) ?></td>
                             <td><?= htmlspecialchars($guest['contact_person']) ?></td>
                             <td><?= htmlspecialchars($guest['email']) ?></td>
                             <td><?= htmlspecialchars($guest['phone']) ?></td>
                             <?php if ($userRole === 'admin'): ?>
                                 <td>
-                                    <!-- Bewerk formulier -->
-                                    <form method="POST" style="display: inline;">
-                                        <input type="hidden" name="action" value="update">
-                                        <input type="hidden" name="guest_id" value="<?= $guest['id'] ?>">
-                                        <input type="hidden" name="company_name" value="<?= $guest['company_name'] ?>">
-                                        <input type="hidden" name="contact_person" value="<?= $guest['contact_person'] ?>">
-                                        <input type="hidden" name="email" value="<?= $guest['email'] ?>">
-                                        <input type="hidden" name="phone" value="<?= $guest['phone'] ?>">
-                                        <button type="submit">Bewerk</button>
-                                    </form>
+                                    <!-- Bewerk knop -->
+                                    <button onclick="editGuest(<?= $guest['id'] ?>)">Bewerk</button>
 
                                     <!-- Verwijder formulier -->
                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Weet je zeker dat je deze gast wilt verwijderen?')">
@@ -158,6 +160,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </form>
                                 </td>
                             <?php endif; ?>
+                        </tr>
+
+                        <!-- Bewerk formulier -->
+                        <tr id="form_<?= $guest['id'] ?>" style="display: none;">
+                            <form method="POST" action="">
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="guest_id" value="<?= $guest['id'] ?>">
+
+                                <td><input type="text" name="company_name" value="<?= htmlspecialchars($guest['company_name']) ?>" required></td>
+                                <td><input type="text" name="contact_person" value="<?= htmlspecialchars($guest['contact_person']) ?>" required></td>
+                                <td><input type="email" name="email" value="<?= htmlspecialchars($guest['email']) ?>" required></td>
+                                <td><input type="text" name="phone" value="<?= htmlspecialchars($guest['phone']) ?>" required></td>
+
+                                <td>
+                                    <button type="submit">Opslaan</button>
+                                    <button type="button" onclick="document.getElementById('form_<?= $guest['id'] ?>').style.display = 'none'; document.getElementById('row_<?= $guest['id'] ?>').style.display = 'table-row';">Annuleren</button>
+                                </td>
+                            </form>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

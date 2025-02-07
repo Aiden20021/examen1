@@ -17,9 +17,9 @@ if ($userRole !== 'admin' && $userRole !== 'baliemedewerker') {
 }
 
 // Haal alle reserveringen op
-$stmt = $pdo->query("SELECT r.*, g.company_name, ro.name AS room_name FROM Reservations r 
-                     JOIN Guests g ON r.guest_id = g.id 
-                     JOIN Rooms ro ON r.room_id = ro.id 
+$stmt = $pdo->query("SELECT r.*, g.company_name, ro.name AS room_name FROM Reservations r
+                     JOIN Guests g ON r.guest_id = g.id
+                     JOIN Rooms ro ON r.room_id = ro.id
                      WHERE r.status = 'bevestigd'");
 $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -30,15 +30,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $reservation_date = $_POST['reservation_date'];
     $start_time = $_POST['start_time'];
     $end_time = $_POST['end_time'];
+    $end_date = $_POST['end_date']; 
 
-    $stmt = $pdo->prepare("INSERT INTO Reservations (guest_id, room_id, reservation_date, start_time, end_time, status) 
-                           VALUES (:guest_id, :room_id, :reservation_date, :start_time, :end_time, 'bevestigd')");
+    $stmt = $pdo->prepare("INSERT INTO Reservations (guest_id, room_id, reservation_date, start_time, end_time, end_date, status)
+                           VALUES (:guest_id, :room_id, :reservation_date, :start_time, :end_time, :end_date, 'bevestigd')");
     $stmt->execute([
         'guest_id' => $guest_id,
         'room_id' => $room_id,
         'reservation_date' => $reservation_date,
         'start_time' => $start_time,
-        'end_time' => $end_time
+        'end_time' => $end_time,
+        'end_date' => $end_date 
     ]);
 
     header("Location: reservations.php");
@@ -63,16 +65,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $reservation_date = $_POST['reservation_date'];
     $start_time = $_POST['start_time'];
     $end_time = $_POST['end_time'];
+    $end_date = $_POST['end_date']; 
 
-    $stmt = $pdo->prepare("UPDATE Reservations SET guest_id = :guest_id, room_id = :room_id, reservation_date = :reservation_date, 
-                           start_time = :start_time, end_time = :end_time WHERE id = :id");
+    $stmt = $pdo->prepare("UPDATE Reservations SET guest_id = :guest_id, room_id = :room_id, reservation_date = :reservation_date,
+                           start_time = :start_time, end_time = :end_time, end_date = :end_date WHERE id = :id");
     $stmt->execute([
         'id' => $reservation_id,
         'guest_id' => $guest_id,
         'room_id' => $room_id,
         'reservation_date' => $reservation_date,
         'start_time' => $start_time,
-        'end_time' => $end_time
+        'end_time' => $end_time,
+        'end_date' => $end_date 
     ]);
 
     header("Location: reservations.php");
@@ -87,6 +91,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Samenkomst - Reserveringen</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script>
+        // Toggle bewerk formulier binnen dezelfde rij
+        function editReservation(id) {
+            var row = document.getElementById('row_' + id);
+            var form = document.getElementById('form_' + id);
+            row.style.display = 'none';
+            form.style.display = 'table-row';
+        }
+    </script>
 </head>
 <body>
     <header>
@@ -129,11 +142,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <label for="reservation_date">Datum:</label>
                 <input type="date" id="reservation_date" name="reservation_date" required><br><br>
 
+                <label for="end_date">Einddatum:</label>
+                <input type="date" id="end_date" name="end_date" required><br><br>
+                
                 <label for="start_time">Starttijd:</label>
                 <input type="time" id="start_time" name="start_time" required><br><br>
 
                 <label for="end_time">Eindtijd:</label>
                 <input type="time" id="end_time" name="end_time" required><br><br>
+
 
                 <button type="submit">Toevoegen</button>
             </form>
@@ -149,6 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <th>Kamernaam</th>
                         <th>Datum</th>
                         <th>Tijdstippen</th>
+                        <th>Einddatum</th>
                         <?php if ($userRole === 'admin'): ?>
                             <th>Actie</th>
                         <?php endif; ?>
@@ -156,24 +174,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </thead>
                 <tbody>
                     <?php foreach ($reservations as $reservation): ?>
-                        <tr>
+                        <tr id="row_<?= $reservation['id'] ?>">
                             <td><?= htmlspecialchars($reservation['company_name']) ?></td>
                             <td><?= htmlspecialchars($reservation['room_name']) ?></td>
                             <td><?= htmlspecialchars($reservation['reservation_date']) ?></td>
                             <td><?= htmlspecialchars($reservation['start_time']) ?> - <?= htmlspecialchars($reservation['end_time']) ?></td>
+                            <td><?= htmlspecialchars($reservation['end_date']) ?></td>
                             <?php if ($userRole === 'admin'): ?>
                                 <td>
-                                    <!-- Bewerk formulier -->
-                                    <form method="POST" style="display: inline;">
-                                        <input type="hidden" name="action" value="update">
-                                        <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
-                                        <input type="hidden" name="guest_id" value="<?= $reservation['guest_id'] ?>">
-                                        <input type="hidden" name="room_id" value="<?= $reservation['room_id'] ?>">
-                                        <input type="hidden" name="reservation_date" value="<?= $reservation['reservation_date'] ?>">
-                                        <input type="hidden" name="start_time" value="<?= $reservation['start_time'] ?>">
-                                        <input type="hidden" name="end_time" value="<?= $reservation['end_time'] ?>">
-                                        <button type="submit">Bewerk</button>
-                                    </form>
+                                    <button onclick="editReservation(<?= $reservation['id'] ?>)">Bewerk</button>
 
                                     <!-- Verwijder formulier -->
                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Weet je zeker dat je deze reservering wilt annuleren?')">
@@ -183,6 +192,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </form>
                                 </td>
                             <?php endif; ?>
+                        </tr>
+
+                        <!-- Bewerk formulier -->
+                        <tr id="form_<?= $reservation['id'] ?>" style="display: none;">
+                            <form method="POST" action="">
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+
+                                <td>
+                                    <select name="guest_id" required>
+                                        <?php
+                                        $stmt = $pdo->query("SELECT id, company_name FROM Guests WHERE status = 'actief'");
+                                        $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($guests as $guest): ?>
+                                            <option value="<?= $guest['id'] ?>" <?= $reservation['guest_id'] == $guest['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($guest['company_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <select name="room_id" required>
+                                        <?php
+                                        $stmt = $pdo->query("SELECT id, name FROM Rooms WHERE status = 'beschikbaar'");
+                                        $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($rooms as $room): ?>
+                                            <option value="<?= $room['id'] ?>" <?= $reservation['room_id'] == $room['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($room['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+
+                                <td><input type="date" name="reservation_date" value="<?= htmlspecialchars($reservation['reservation_date']) ?>" required></td>
+                                <td>
+                                    <input type="time" name="start_time" value="<?= htmlspecialchars($reservation['start_time']) ?>" required>
+                                    <input type="time" name="end_time" value="<?= htmlspecialchars($reservation['end_time']) ?>" required>
+                                </td>
+                                <td><input type="date" name="end_date" value="<?= htmlspecialchars($reservation['end_date']) ?>" required></td>
+
+                                <td>
+                                    <button type="submit">Opslaan</button>
+                                    <button type="button" onclick="document.getElementById('form_<?= $reservation['id'] ?>').style.display = 'none'; document.getElementById('row_<?= $reservation['id'] ?>').style.display = 'table-row';">Annuleren</button>
+                                </td>
+                            </form>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

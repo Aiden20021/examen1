@@ -40,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <header>
-        <h1>De Samenkomst</h1>
+        <h1>De Samenkomst</h1>z
     </header>
 
     <main>
