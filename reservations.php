@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $reservation_date = $_POST['reservation_date'];
     $start_time = $_POST['start_time'];
     $end_time = $_POST['end_time'];
-    $end_date = $_POST['end_date']; 
+    $end_date = $_POST['end_date'];
 
     $stmt = $pdo->prepare("INSERT INTO Reservations (guest_id, room_id, reservation_date, start_time, end_time, end_date, status)
                            VALUES (:guest_id, :room_id, :reservation_date, :start_time, :end_time, :end_date, 'bevestigd')");
@@ -40,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         'reservation_date' => $reservation_date,
         'start_time' => $start_time,
         'end_time' => $end_time,
-        'end_date' => $end_date 
+        'end_date' => $end_date
     ]);
 
     header("Location: reservations.php");
@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $reservation_date = $_POST['reservation_date'];
     $start_time = $_POST['start_time'];
     $end_time = $_POST['end_time'];
-    $end_date = $_POST['end_date']; 
+    $end_date = $_POST['end_date'];
 
     $stmt = $pdo->prepare("UPDATE Reservations SET guest_id = :guest_id, room_id = :room_id, reservation_date = :reservation_date,
                            start_time = :start_time, end_time = :end_time, end_date = :end_date WHERE id = :id");
@@ -76,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         'reservation_date' => $reservation_date,
         'start_time' => $start_time,
         'end_time' => $end_time,
-        'end_date' => $end_date 
+        'end_date' => $end_date
     ]);
 
     header("Location: reservations.php");
@@ -91,6 +91,65 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Samenkomst - Reserveringen</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        main {
+            padding: 20px;
+        }
+        section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .add-reservation-form {
+            display: none;
+        }
+    </style>
     <script>
         // Toggle bewerk formulier binnen dezelfde rij
         function editReservation(id) {
@@ -98,6 +157,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             var form = document.getElementById('form_' + id);
             row.style.display = 'none';
             form.style.display = 'table-row';
+        }
+
+        // Toon het toevoegformulier
+        function showAddForm() {
+            var form = document.getElementById('addReservationForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
     </script>
 </head>
@@ -114,46 +179,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     </header>
 
     <main>
-        <!-- Nieuwe reservering toevoegen -->
+        <!-- Knop om het toevoegformulier te tonen -->
         <section>
-            <h2>Nieuwe reservering toevoegen</h2>
-            <form method="POST" action="">
-                <input type="hidden" name="action" value="add">
-                <label for="guest_id">Gast:</label>
-                <select id="guest_id" name="guest_id" required>
-                    <?php
-                    $stmt = $pdo->query("SELECT id, company_name FROM Guests WHERE status = 'actief'");
-                    $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($guests as $guest): ?>
-                        <option value="<?= $guest['id'] ?>"><?= htmlspecialchars($guest['company_name']) ?></option>
-                    <?php endforeach; ?>
-                </select><br><br>
+            <button onclick="showAddForm()">Nieuwe reservering toevoegen</button>
+            <div id="addReservationForm" class="add-reservation-form">
+                <br>
+                <form method="POST" action="">
+                    <input type="hidden" name="action" value="add">
+                    <label for="guest_id">Gast:</label>
+                    <select id="guest_id" name="guest_id" required>
+                        <?php
+                        $stmt = $pdo->query("SELECT id, company_name FROM Guests WHERE status = 'actief'");
+                        $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($guests as $guest): ?>
+                            <option value="<?= $guest['id'] ?>"><?= htmlspecialchars($guest['company_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select><br><br>
 
-                <label for="room_id">Kamer:</label>
-                <select id="room_id" name="room_id" required>
-                    <?php
-                    $stmt = $pdo->query("SELECT id, name FROM Rooms WHERE status = 'beschikbaar'");
-                    $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($rooms as $room): ?>
-                        <option value="<?= $room['id'] ?>"><?= htmlspecialchars($room['name']) ?></option>
-                    <?php endforeach; ?>
-                </select><br><br>
+                    <label for="room_id">Kamer:</label>
+                    <select id="room_id" name="room_id" required>
+                        <?php
+                        $stmt = $pdo->query("SELECT id, name FROM Rooms WHERE status = 'beschikbaar'");
+                        $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($rooms as $room): ?>
+                            <option value="<?= $room['id'] ?>"><?= htmlspecialchars($room['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select><br><br>
 
-                <label for="reservation_date">Datum:</label>
-                <input type="date" id="reservation_date" name="reservation_date" required><br><br>
+                    <label for="reservation_date">Datum:</label>
+                    <input type="date" id="reservation_date" name="reservation_date" required><br><br>
 
-                <label for="end_date">Einddatum:</label>
-                <input type="date" id="end_date" name="end_date" required><br><br>
-                
-                <label for="start_time">Starttijd:</label>
-                <input type="time" id="start_time" name="start_time" required><br><br>
+                    <label for="end_date">Einddatum:</label>
+                    <input type="date" id="end_date" name="end_date" required><br><br>
 
-                <label for="end_time">Eindtijd:</label>
-                <input type="time" id="end_time" name="end_time" required><br><br>
+                    <label for="start_time">Starttijd:</label>
+                    <input type="time" id="start_time" name="start_time" required><br><br>
 
+                    <label for="end_time">Eindtijd:</label>
+                    <input type="time" id="end_time" name="end_time" required><br><br>
 
-                <button type="submit">Toevoegen</button>
-            </form>
+                    <button type="submit">Toevoegen</button>
+                </form>
+            </div>
         </section>
 
         <!-- Alle reserveringen tonen -->

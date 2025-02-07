@@ -7,7 +7,7 @@ body {
 }
 
 header {
-    background-color: #8B4513;
+    background-color: #4CAF50;
     color: white;
     padding: 1rem;
     text-align: center;
@@ -36,7 +36,7 @@ table th, table td {
 }
 
 table th {
-    background-color: #87A96B;
+    background-color: #4CAF50 !important;
     color: white;
 }
 

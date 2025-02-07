@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $email = $_POST['email'];
     $phone = $_POST['phone'];
 
-    $stmt = $pdo->prepare("INSERT INTO Guests (company_name, contact_person, email, phone, status) 
+    $stmt = $pdo->prepare("INSERT INTO Guests (company_name, contact_person, email, phone, status)
                            VALUES (:company_name, :contact_person, :email, :phone, 'actief')");
     $stmt->execute([
         'company_name' => $company_name,
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $email = $_POST['email'];
     $phone = $_POST['phone'];
 
-    $stmt = $pdo->prepare("UPDATE Guests SET company_name = :company_name, contact_person = :contact_person, 
+    $stmt = $pdo->prepare("UPDATE Guests SET company_name = :company_name, contact_person = :contact_person,
                            email = :email, phone = :phone WHERE id = :id");
     $stmt->execute([
         'id' => $guest_id,
@@ -80,13 +80,78 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Samenkomst - Gasten</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        main {
+            padding: 20px;
+        }
+        section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .add-guest-form {
+            display: none;
+        }
+    </style>
     <script>
         // Toggle bewerk formulier binnen dezelfde rij
         function editGuest(id) {
             var row = document.getElementById('row_' + id);
             var form = document.getElementById('form_' + id);
             row.style.display = 'none';
-            form.style.display = 'block';
+            form.style.display = 'table-row';
+        }
+
+        // Toon het toevoegformulier
+        function showAddForm() {
+            var form = document.getElementById('addGuestForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
     </script>
 </head>
@@ -103,25 +168,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     </header>
 
     <main>
-        <!-- Nieuwe gast toevoegen -->
+        <!-- Knop om het toevoegformulier te tonen -->
         <section>
-            <h2>Nieuwe gast toevoegen</h2>
-            <form method="POST" action="">
-                <input type="hidden" name="action" value="add">
-                <label for="company_name">Bedrijfsnaam:</label>
-                <input type="text" id="company_name" name="company_name" required><br><br>
+            <button onclick="showAddForm()">Nieuwe gast toevoegen</button>
+            <div id="addGuestForm" class="add-guest-form">
+            <br>
+                <form method="POST" action="">
+                    <input type="hidden" name="action" value="add">
+                    <label for="company_name">Bedrijfsnaam:</label>
+                    <input type="text" id="company_name" name="company_name" required><br><br>
 
-                <label for="contact_person">Contactpersoon:</label>
-                <input type="text" id="contact_person" name="contact_person" required><br><br>
+                    <label for="contact_person">Contactpersoon:</label>
+                    <input type="text" id="contact_person" name="contact_person" required><br><br>
 
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required><br><br>
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required><br><br>
 
-                <label for="phone">Telefoonnummer:</label>
-                <input type="text" id="phone" name="phone" required><br><br>
+                    <label for="phone">Telefoonnummer:</label>
+                    <input type="text" id="phone" name="phone" required><br><br>
 
-                <button type="submit">Toevoegen</button>
-            </form>
+                    <button type="submit">Toevoegen</button>
+                </form>
+            </div>
         </section>
 
         <!-- Alle gasten tonen -->
