@@ -37,8 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $roomTypeStmt->execute(['room_id' => $room_id]);
     $roomType = $roomTypeStmt->fetchColumn();
 
-    // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor vergaderkamers
-    if ($roomType === 'vergaderkamer') {
+    // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor kantoorruimtes
+    if ($roomType === 'kantoorruimte') {
         $reservation_date_obj = new DateTime($reservation_date);
         $end_date_obj = new DateTime($end_date);
         $oneYear = new DateInterval('P1Y');
@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $reservation_date_plus_one_year->add($oneYear);
 
         if ($end_date_obj < $reservation_date_plus_one_year) {
-            die("Fout: De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor vergaderkamers.");
+            die("Fout: De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor kantoorruimtes.");
         }
     }
 
@@ -92,8 +92,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $roomTypeStmt->execute(['room_id' => $room_id]);
     $roomType = $roomTypeStmt->fetchColumn();
 
-    // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor vergaderkamers
-    if ($roomType === 'vergaderkamer') {
+    // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor kantoorruimtes
+    if ($roomType === 'kantoorruimte') {
         $reservation_date_obj = new DateTime($reservation_date);
         $end_date_obj = new DateTime($end_date);
         $oneYear = new DateInterval('P1Y');
@@ -103,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $reservation_date_plus_one_year->add($oneYear);
 
         if ($end_date_obj < $reservation_date_plus_one_year) {
-            die("Fout: De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor vergaderkamers.");
+            die("Fout: De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor kantoorruimtes.");
         }
     }
 
@@ -205,18 +205,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
 
-        // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor vergaderkamers
+        // Valideer dat de einddatum minimaal een jaar na de reserveringsdatum ligt voor kantoorruimtes
         function validateDates(roomType) {
             var reservationDate = document.getElementById('reservation_date').value;
             var endDate = document.getElementById('end_date').value;
 
-            if (reservationDate && endDate && roomType === 'vergaderkamer') {
+            if (reservationDate && endDate && roomType === 'kantoorruimte') {
                 var start = new Date(reservationDate);
                 var end = new Date(endDate);
                 var oneYear = 365 * 24 * 60 * 60 * 1000; // Miliseconden in een jaar
 
                 if ((end - start) < oneYear) {
-                    alert("De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor vergaderkamers.");
+                    alert("De einddatum moet minimaal een jaar na de reserveringsdatum liggen voor kantoorruimtes.");
                     return false;
                 }
             }

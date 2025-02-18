@@ -4,12 +4,12 @@ include 'db.php';
 
 // Controleer of de gebruiker is ingelogd
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header(header: "Location: login.php");
     exit;
 }
 
 // Haal de rol van de gebruiker op
-$userRole = getCurrentUserRole($pdo);
+$userRole = getCurrentUserRole(pdo: $pdo);
 
 // Controleer of de gebruiker toegang heeft
 if ($userRole !== 'admin' && $userRole !== 'baliemedewerker') {
