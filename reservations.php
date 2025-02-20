@@ -16,11 +16,22 @@ if ($userRole !== 'admin' && $userRole !== 'baliemedewerker') {
     die("U heeft geen toegang tot deze pagina.");
 }
 
-// Haal alle reserveringen op
-$stmt = $pdo->query("SELECT r.*, g.company_name, ro.name AS room_name, ro.type AS room_type FROM Reservations r
-                     JOIN Guests g ON r.guest_id = g.id
-                     JOIN Rooms ro ON r.room_id = ro.id
-                     WHERE r.status = 'bevestigd'");
+// Haal alle reserveringen op, eventueel gefilterd op bedrijfsnaam
+$searchQuery = isset($_GET['search']) ? $_GET['search'] : '';
+$query = "SELECT r.*, g.company_name, ro.name AS room_name, ro.type AS room_type FROM Reservations r
+          JOIN Guests g ON r.guest_id = g.id
+          JOIN Rooms ro ON r.room_id = ro.id
+          WHERE r.status = 'bevestigd'";
+
+if (!empty($searchQuery)) {
+    $query .= " AND g.company_name LIKE :search";
+}
+
+$stmt = $pdo->prepare($query);
+if (!empty($searchQuery)) {
+    $stmt->bindValue(':search', '%' . $searchQuery . '%');
+}
+$stmt->execute();
 $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Voeg een nieuwe reservering toe
@@ -189,6 +200,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         .add-reservation-form {
             display: none;
         }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .search-bar input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
     </style>
     <script>
         // Toggle bewerk formulier binnen dezelfde rij
@@ -237,6 +257,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     </header>
 
     <main>
+        <!-- Zoekbalk -->
+        <section class="search-bar">
+            <form method="GET" action="">
+                <input type="text" name="search" placeholder="Zoek op bedrijfsnaam..." value="<?= htmlspecialchars($searchQuery) ?>">
+                <button type="submit">Zoeken</button>
+            </form>
+        </section>
+
         <!-- Knop om het toevoegformulier te tonen -->
         <section>
             <button onclick="showAddForm()">Nieuwe reservering toevoegen</button>
