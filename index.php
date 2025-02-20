@@ -209,7 +209,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <th>Datum</th>
                             <th>Tijdstippen</th>
                             <th>Kamertype</th>
-                            <th>Einddatum</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -222,16 +221,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <?= htmlspecialchars($reservation['start_time']) ?> - <?= htmlspecialchars($reservation['end_time']) ?>
                                 </td>
                                 <td><?= htmlspecialchars($reservation['room_type']) ?></td>
-                                <td>
-                                    <!-- Formulier om de einddatum te bewerken -->
-                                    <form method="POST" style="display: flex; gap: 10px;">
-                                        <input type="hidden" name="action" value="update_end_date">
-                                        <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
-                                        <input type="date" name="new_end_date" value="<?= htmlspecialchars($reservation['end_date']) ?>" required>
-                                        <button type="submit" class="extend-button">Opslaan Verlengen</button>
-                                    </form>
-                                </td>
-
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
