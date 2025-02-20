@@ -1,7 +1,7 @@
 <?php
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=kamerverhuur;charset=utf8', 'root', '');
-    $pdo->setAttribute(attribute: PDO::ATTR_ERRMODE, value: PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die("Databaseverbinding mislukt: " . $e->getMessage());
 }
