@@ -16,7 +16,7 @@ if ($userRole !== 'admin' && $userRole !== 'baliemedewerker') {
     die("U heeft geen toegang tot deze pagina.");
 }
 
-// Haal alle reserveringen op, eventueel gefilterd op bedrijfsnaam
+// Haal alle reserveringen op bedrijfsnaam
 $searchQuery = isset($_GET['search']) ? $_GET['search'] : '';
 $query = "SELECT r.*, g.company_name, ro.name AS room_name, ro.type AS room_type FROM Reservations r
           JOIN Guests g ON r.guest_id = g.id

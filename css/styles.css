@@ -1,13 +1,13 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4; /* Lichtgrijs achtergrond */
+    background-color: #f4f4f4; 
     color: #333;
     margin: 0;
     padding: 0;
 }
 
 header {
-    background-color: #6B8E23; /* Mosgroen */
+    background-color: #6B8E23; 
     color: white;
     padding: 1rem;
     text-align: center;
@@ -36,12 +36,12 @@ table th, table td {
 }
 
 table th {
-    background-color: #6B8E23 !important; /* Mosgroen */
+    background-color: #6B8E23 !important; 
     color: white;
 }
 
 button {
-    background-color: #8B4513; /* Baksteenbruin */
+    background-color: #8B4513; 
     color: white;
     border: none;
     padding: 10px 20px;
@@ -50,5 +50,5 @@ button {
 }
 
 button:hover {
-    background-color: #A0522D; /* Donkerder baksteenbruin */
+    background-color: #A0522D; 
 }
