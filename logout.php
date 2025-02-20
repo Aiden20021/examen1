@@ -4,7 +4,7 @@ session_start();
 // beeindigd alle sessiedata
 session_destroy();
 
-// Redirect naar de loginpagina
+// ga terug naar de loginpagina
 header("Location: homepage.html");
 exit;
 ?>
