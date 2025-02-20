@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Vernietig alle sessiedata
+// beeindigd alle sessiedata
 session_destroy();
 
 // Redirect naar de loginpagina
