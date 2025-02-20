@@ -16,10 +16,10 @@ $reservations_query = $pdo->prepare("
     JOIN Guests g ON r.guest_id = g.id
     JOIN Rooms ro ON r.room_id = ro.id
     LEFT JOIN Contracts c ON r.guest_id = c.guest_id AND r.room_id = c.room_id
-    WHERE r.status = 'bevestigd'
+    WHERE r.status = 'bevestigd' AND r.reservation_date = :vandaag
     ORDER BY r.reservation_date ASC
 ");
-$reservations_query->execute();
+$reservations_query->execute(['vandaag' => $vandaag]);
 $reservations = $reservations_query->fetchAll(PDO::FETCH_ASSOC);
 
 // Splits de reserveringen op basis van het kamertype
@@ -197,9 +197,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     </header>
     <main>
         <section>
-            <h2>Actieve Reserveringen voor Vergaderkamers</h2>
+            <h2>Vandaagse Reserveringen voor Vergaderkamers</h2>
             <?php if (empty($meeting_rooms)): ?>
-                <p>Er zijn geen actieve reserveringen voor vergaderkamers.</p>
+                <p>Er zijn geen reserveringen voor vandaag.</p>
             <?php else: ?>
                 <table>
                     <thead>
