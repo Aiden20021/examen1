@@ -1,4 +1,73 @@
-RVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'update_end_date') {
+<?php
+session_start();
+include 'db.php';
+
+// Controleer of de gebruiker is ingelogd
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// Haal alle actieve reserveringen op, inclusief contractdetails, gesorteerd op datum (oud naar nieuw)
+$vandaag = date('Y-m-d');
+$reservations_query = $pdo->prepare("
+    SELECT r.*, g.company_name, ro.name AS room_name, ro.type AS room_type, c.id AS contract_id, c.end_date AS contract_end_date, c.status AS contract_status
+    FROM Reservations r
+    JOIN Guests g ON r.guest_id = g.id
+    JOIN Rooms ro ON r.room_id = ro.id
+    LEFT JOIN Contracts c ON r.guest_id = c.guest_id AND r.room_id = c.room_id
+    WHERE r.status = 'bevestigd'
+    ORDER BY r.reservation_date ASC
+");
+$reservations_query->execute();
+$reservations = $reservations_query->fetchAll(PDO::FETCH_ASSOC);
+
+// Splits de reserveringen op basis van het kamertype
+$meeting_rooms = [];
+$office_spaces = [];
+
+foreach ($reservations as $reservation) {
+    if ($reservation['room_type'] === 'vergaderkamer') {
+        $meeting_rooms[] = $reservation;
+    } elseif ($reservation['room_type'] === 'kantoorruimte') {
+        $office_spaces[] = $reservation;
+    }
+}
+
+// Functie om een reservering te bewerken
+function updateReservationAndContract($pdo, $reservation_id, $new_end_date) {
+    try {
+        // Begin transactie
+        $pdo->beginTransaction();
+
+        // Update de einddatum van de reservering
+        $updateReservation = $pdo->prepare("UPDATE Reservations SET end_date = :newEndDate WHERE id = :reservationId");
+        $updateReservation->execute(['newEndDate' => $new_end_date, 'reservationId' => $reservation_id]);
+
+        // Controleer of er een contract is en pas dit ook aan
+        $contractStmt = $pdo->prepare("SELECT id FROM Contracts WHERE guest_id = (SELECT guest_id FROM Reservations WHERE id = :reservationId) AND room_id = (SELECT room_id FROM Reservations WHERE id = :reservationId)");
+        $contractStmt->execute(['reservationId' => $reservation_id]);
+        $contract = $contractStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($contract) {
+            // Update de einddatum van het contract
+            $updateContract = $pdo->prepare("UPDATE Contracts SET end_date = :newEndDate WHERE id = :contractId");
+            $updateContract->execute(['newEndDate' => $new_end_date, 'contractId' => $contract['id']]);
+        }
+
+        // Commit transactie
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        // Rollback transactie bij fout
+        $pdo->rollBack();
+        error_log("Fout bij het bijwerken van de reservering: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Bewerk een reservering via POST-verzoek
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'update_end_date') {
     $reservation_id = $_POST['reservation_id'];
     $new_end_date = $_POST['new_end_date'];
 
