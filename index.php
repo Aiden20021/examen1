@@ -1,29 +1,17 @@
-<?php
-session_start();
-include 'db.php';
+RVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'update_end_date') {
+    $reservation_id = $_POST['reservation_id'];
+    $new_end_date = $_POST['new_end_date'];
 
-// Controleer of de gebruiker is ingelogd
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    if (updateReservationAndContract($pdo, $reservation_id, $new_end_date)) {
+        echo "<script>alert('Einddatum succesvol bijgewerkt!');</script>";
+    } else {
+        echo "<script>alert('Fout: Kon de einddatum niet bijwerken.');</script>";
+    }
+
+    // Vernieuw de pagina
+    header("Refresh:0");
     exit;
 }
-
-// Haal vandaagse reserveringen op
-$vandaag = date('Y-m-d');
-$reservations_today = $pdo->prepare("SELECT r.*, g.company_name, ro.name AS room_name FROM Reservations r
-                                    JOIN Guests g ON r.guest_id = g.id
-                                    JOIN Rooms ro ON r.room_id = ro.id
-                                    WHERE r.reservation_date = :date AND r.status = 'bevestigd'");
-$reservations_today->execute(['date' => $vandaag]);
-$reservations = $reservations_today->fetchAll(PDO::FETCH_ASSOC);
-
-// Haal komende contractvervallen op
-$contracts_expiring = $pdo->prepare("SELECT c.*, g.company_name, ro.name AS room_name FROM Contracts c
-                                     JOIN Guests g ON c.guest_id = g.id
-                                     JOIN Rooms ro ON c.room_id = ro.id
-                                     WHERE c.end_date <= :one_month AND c.status != 'verlopen'");
-$contracts_expiring->execute(['one_month' => date('Y-m-d', strtotime('+1 month'))]);
-$contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -32,9 +20,8 @@ $contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Samenkomst - Dashboard</title>
-    <link rel="stylesheet" href="css/styles.css">
     <style>
-    body {
+       body {
         font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
@@ -124,15 +111,9 @@ $contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
         color: black;
         text-decoration: none;
         cursor: pointer;
-    }
-</style>
+    }
 
-    <script>
-        function extendContract(contractId) {
-            // Hier kun je een AJAX-verzoek of een andere actie toevoegen om het contract te verlengen
-            alert('Verlengen van contract met ID: ' + contractId);
-        }
-    </script>
+    </style>
 </head>
 <body>
     <header>
@@ -145,27 +126,43 @@ $contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
             <a href="logout.php">Uitloggen</a>
         </nav>
     </header>
-
     <main>
         <section>
-            <h2>Vandaagse reserveringen</h2>
-            <?php if (empty($reservations)): ?>
-                <p>Er zijn geen reserveringen voor vandaag.</p>
+            <h2>Actieve Reserveringen voor Vergaderkamers</h2>
+            <?php if (empty($meeting_rooms)): ?>
+                <p>Er zijn geen actieve reserveringen voor vergaderkamers.</p>
             <?php else: ?>
                 <table>
                     <thead>
                         <tr>
                             <th>Kamernummer</th>
                             <th>Gastennaam</th>
+                            <th>Datum</th>
                             <th>Tijdstippen</th>
+                            <th>Kamertype</th>
+                            <th>Einddatum</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($reservations as $reservation): ?>
+                        <?php foreach ($meeting_rooms as $reservation): ?>
                             <tr>
                                 <td><?= htmlspecialchars($reservation['room_name']) ?></td>
                                 <td><?= htmlspecialchars($reservation['company_name']) ?></td>
-                                <td><?= htmlspecialchars($reservation['start_time']) ?> - <?= htmlspecialchars($reservation['end_time']) ?></td>
+                                <td><?= htmlspecialchars($reservation['reservation_date']) ?></td>
+                                <td>
+                                    <?= htmlspecialchars($reservation['start_time']) ?> - <?= htmlspecialchars($reservation['end_time']) ?>
+                                </td>
+                                <td><?= htmlspecialchars($reservation['room_type']) ?></td>
+                                <td>
+                                    <!-- Formulier om de einddatum te bewerken -->
+                                    <form method="POST" style="display: flex; gap: 10px;">
+                                        <input type="hidden" name="action" value="update_end_date">
+                                        <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+                                        <input type="date" name="new_end_date" value="<?= htmlspecialchars($reservation['end_date']) ?>" required>
+                                        <button type="submit" class="extend-button">Opslaan Verlengen</button>
+                                    </form>
+                                </td>
+
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -174,26 +171,41 @@ $contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
         </section>
 
         <section>
-            <h2>Komende contractvervallen</h2>
-            <?php if (empty($contracts)): ?>
-                <p>Er zijn geen contracts die binnenkort verlopen.</p>
+            <h2>Actieve Reserveringen voor Kantoorruimtes</h2>
+            <?php if (empty($office_spaces)): ?>
+                <p>Er zijn geen actieve reserveringen voor kantoorruimtes.</p>
             <?php else: ?>
                 <table>
                     <thead>
                         <tr>
                             <th>Kamernummer</th>
-                            <th>Bedrijfsnaam</th>
+                            <th>Gastennaam</th>
+                            <th>Datum</th>
+                            <th>Tijdstippen</th>
+                            <th>Kamertype</th>
                             <th>Einddatum</th>
-                            <th>Actie</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($contracts as $contract): ?>
+                        <?php foreach ($office_spaces as $reservation): ?>
                             <tr>
-                                <td><?= htmlspecialchars($contract['room_name']) ?></td>
-                                <td><?= htmlspecialchars($contract['company_name']) ?></td>
-                                <td><?= htmlspecialchars($contract['end_date']) ?></td>
-                                <td><button onclick="extendContract(<?= $contract['id'] ?>)">Verlengen</button></td>
+                                <td><?= htmlspecialchars($reservation['room_name']) ?></td>
+                                <td><?= htmlspecialchars($reservation['company_name']) ?></td>
+                                <td><?= htmlspecialchars($reservation['reservation_date']) ?></td>
+                                <td>
+                                    Gehele periode
+                                </td>
+                                <td><?= htmlspecialchars($reservation['room_type']) ?></td>
+                                <td>
+                                    <!-- Formulier om de einddatum te bewerken -->
+                                    <form method="POST" style="display: flex; gap: 10px;">
+                                        <input type="hidden" name="action" value="update_end_date">
+                                        <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+                                        <input type="date" name="new_end_date" value="<?= htmlspecialchars($reservation['end_date']) ?>" required>
+                                        <button type="submit" class="extend-button">Opslaan Verlengen</button>
+                                    </form>
+                                </td>
+
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -201,7 +213,5 @@ $contracts = $contracts_expiring->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </section>
     </main>
-
-    <script src="js/script.js"></script>
 </body>
 </html>
