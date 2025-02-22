@@ -68,16 +68,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Soft delete een kamer (alleen Admin)
+// Verwijder een kamer (alleen Admin)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'delete' && $userRole === 'admin') {
     $room_id = $_POST['room_id'] ?? null;
     if (!$room_id) {
         die("Fout: Geen geldige kamer-ID opgegeven.");
     }
     try {
-        // Update de status van de kamer naar "niet beschikbaar" en markeer als "verwijderd"
-        $stmt = $pdo->prepare("UPDATE Rooms SET status = 'niet beschikbaar', deleted = 'ja' WHERE id = :id");
+        // Verwijder alle reserveringen die gekoppeld zijn aan de kamer
+        $stmt = $pdo->prepare("DELETE FROM reservations WHERE room_id = :room_id");
+        $stmt->execute(['room_id' => $room_id]);
+
+        // Verwijder de kamer uit de Rooms tabel
+        $stmt = $pdo->prepare("DELETE FROM Rooms WHERE id = :id");
         $stmt->execute(['id' => $room_id]);
+
         header("Location: rooms.php");
         exit;
     } catch (PDOException $e) {
@@ -112,10 +117,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     header("Location: rooms.php");
     exit;
 }
-
-// Haal alleen actieve kamers op
-$stmt = $pdo->query("SELECT * FROM Rooms WHERE deleted = 'nee'");
-$rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -221,7 +222,7 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </style>
 
     <script>
-        // Toggle bewerk formulier binnen dezelfde rij
+        // Toggle bewerk
         function editRoom(id) {
             var row = document.getElementById('row_' + id);
             var form = document.getElementById('form_' + id);
@@ -325,6 +326,8 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Naam</th>
                         <th>Type</th>
                         <th>Capaciteit</th>
+                        <th>Tafelopstelling</th>
+                        <th>Beeldschermtype</th>
                         <th>Status</th>
                         <?php if ($userRole === 'admin'): ?>
                             <th>Actie</th>
@@ -338,6 +341,8 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($room['name']) ?></td>
                             <td><?= htmlspecialchars($room['type']) ?></td>
                             <td><?= htmlspecialchars($room['max_capacity']) ?></td>
+                            <td><?= htmlspecialchars($room['table_layout']) ?></td>
+                            <td><?= htmlspecialchars($room['screen_type']) ?></td>
                             <td><?= htmlspecialchars($room['status']) ?></td>
                             <?php if ($userRole === 'admin'): ?>
                                 <td>

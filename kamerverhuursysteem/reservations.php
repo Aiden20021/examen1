@@ -262,6 +262,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         <section class="search-bar">
             <form method="GET" action="">
                 <input type="text" name="search" placeholder="Zoek op bedrijfsnaam..." value="<?= htmlspecialchars($searchQuery) ?>">
+                <br>
+                <br>
                 <button type="submit">Zoeken</button>
             </form>
         </section>

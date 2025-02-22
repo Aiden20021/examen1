@@ -4,20 +4,27 @@ include 'db.php';
 
 // Controleer of de gebruiker is ingelogd
 if (!isset($_SESSION['user_id'])) {
-    header(header: "Location: login.php");
+    header("Location: login.php");
     exit;
 }
 
 // Haal de rol van de gebruiker op
-$userRole = getCurrentUserRole(pdo: $pdo);
+$userRole = getCurrentUserRole($pdo);
 
 // Controleer of de gebruiker toegang heeft
 if ($userRole !== 'admin' && $userRole !== 'baliemedewerker') {
     die("U heeft geen toegang tot deze pagina.");
 }
 
-// Haal alle gasten op
-$stmt = $pdo->query("SELECT * FROM Guests WHERE status = 'actief'");
+// Standaardstatus voor het ophalen van gasten
+$status = 'actief';
+if (isset($_GET['show_deleted']) && $_GET['show_deleted'] == 'true') {
+    $status = 'verwijderd';
+}
+
+// Haal gasten op op basis van de status
+$stmt = $pdo->prepare("SELECT * FROM Guests WHERE status = :status");
+$stmt->execute(['status' => $status]);
 $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Functie om te controleren of een gast al bestaat
@@ -149,6 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
     .add-guest-form {
         display: none;
+        margin-top: 20px;
     }
     .modal {
         display: none;
@@ -184,6 +192,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         text-decoration: none;
         cursor: pointer;
     }
+    .filter-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .filter-section label {
+        margin-bottom: 0;
+    }
 </style>
 
     <script>
@@ -216,6 +233,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 modal.style.display = 'none';
             }
         }
+
+        // Filter gasten op basis van verwijderde status
+        function filterGuests() {
+            var showDeleted = document.getElementById('showDeleted').checked;
+            var url = new URL(window.location.href);
+            if (showDeleted) {
+                url.searchParams.set('show_deleted', 'true');
+            } else {
+                url.searchParams.delete('show_deleted');
+            }
+            window.location.href = url.toString();
+        }
     </script>
 </head>
 <body>
@@ -242,27 +271,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
         <?php endif; ?>
 
-        <!-- Knop om het toevoegformulier te tonen -->
-        <section>
-            <button onclick="showAddForm()">Nieuwe gast toevoegen</button>
-            <div id="addGuestForm" class="add-guest-form">
-            <br>
-                <form method="POST" action="">
-                    <input type="hidden" name="action" value="add">
-                    <label for="company_name">Bedrijfsnaam:</label>
-                    <input type="text" id="company_name" name="company_name" required><br><br>
+        <!-- Knop om het toevoegformulier te tonen en filter voor verwijderde gasten -->
+        <section class="filter-section">
+            <div>
+                <button onclick="showAddForm()">Nieuwe gast toevoegen</button>
+                <!-- Toevoegformulier -->
+                <div id="addGuestForm" class="add-guest-form">
+                    <form method="POST" action="">
+                        <input type="hidden" name="action" value="add">
+                        <label for="company_name">Bedrijfsnaam:</label>
+                        <input type="text" id="company_name" name="company_name" required><br><br>
 
-                    <label for="contact_person">Contactpersoon:</label>
-                    <input type="text" id="contact_person" name="contact_person" required><br><br>
+                        <label for="contact_person">Contactpersoon:</label>
+                        <input type="text" id="contact_person" name="contact_person" required><br><br>
 
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required><br><br>
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required><br><br>
 
-                    <label for="phone">Telefoonnummer:</label>
-                    <input type="text" id="phone" name="phone" required><br><br>
+                        <label for="phone">Telefoonnummer:</label>
+                        <input type="text" id="phone" name="phone" required><br><br>
 
-                    <button type="submit">Toevoegen</button>
-                </form>
+                        <button type="submit">Toevoegen</button>
+                    </form>
+                </div>
+            </div>
+            <div>
+                <label for="showDeleted">Toon verwijderde gasten:</label>
+                <input type="checkbox" id="showDeleted" onchange="filterGuests()" <?= $status === 'verwijderd' ? 'checked' : '' ?>>
             </div>
         </section>
 
@@ -276,7 +311,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <th>Contactpersoon</th>
                         <th>Email</th>
                         <th>Telefoon</th>
-                        <?php if ($userRole === 'admin'): ?>
+                        <?php if ($userRole === 'admin' && $status === 'actief'): ?>
                             <th>Actie</th>
                         <?php endif; ?>
                     </tr>
@@ -289,7 +324,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <td><?= htmlspecialchars($guest['contact_person']) ?></td>
                             <td><?= htmlspecialchars($guest['email']) ?></td>
                             <td><?= htmlspecialchars($guest['phone']) ?></td>
-                            <?php if ($userRole === 'admin'): ?>
+                            <?php if ($userRole === 'admin' && $guest['status'] === 'actief'): ?>
                                 <td>
                                     <!-- Bewerk knop -->
                                     <button onclick="editGuest(<?= $guest['id'] ?>)">Bewerk</button>
